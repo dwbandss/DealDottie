@@ -1,17 +1,92 @@
 <div class="login-modal" id="loginModal">
 
-  <div class="login-box">
+<div class="login-box">
 
-    <button class="close-login" id="closeLogin">✕</button>
+<button class="close-login" id="closeLogin">✕</button>
 
-    <h2>Welcome Back</h2>
-    <p>Sign in to Deal Dottie</p>
+<div class="auth-container">
 
-    <input type="email" placeholder="Email">
-    <input type="password" placeholder="Password">
+<div class="auth-slider" id="authSlider">
 
-    <button class="login-submit">Sign In</button>
+<!-- STEP 0 : METHOD SELECT -->
+<div class="auth-panel auth-method">
 
-  </div>
+<h2>Welcome to Deal Dottie</h2>
 
+<button class="google-auth" id="googleLogin">
+<img src="https://www.svgrepo.com/show/475656/google-color.svg">
+Continue with Google
+</button>
+
+<button class="email-auth" id="emailStart">
+Continue with Email
+</button>
+
+<p class="auth-small">
+New here? <span id="startRegister">Create account</span>
+</p>
+
+</div>
+
+
+<!-- STEP 1 EMAIL -->
+<div class="auth-panel">
+<h2>Your Email</h2>
+
+<input id="loginEmail" type="email" placeholder="Email">
+
+<button id="loginNext">Next</button>
+
+</div>
+
+
+<!-- STEP 2 PASSWORD -->
+<div class="auth-panel">
+<h2>Password</h2>
+
+<input id="loginPassword" type="password" placeholder="Password">
+
+<button id="loginSubmit">Login</button>
+
+</div>
+
+
+<!-- REGISTER NAME -->
+<div class="auth-panel">
+<h2>Your Name</h2>
+
+<input id="regName" placeholder="Full name">
+
+<button id="regNextName">Next</button>
+
+</div>
+
+
+<!-- REGISTER EMAIL -->
+<div class="auth-panel">
+<h2>Email Address</h2>
+
+<input id="regEmail">
+
+<button id="regNextEmail">Next</button>
+
+</div>
+
+
+<!-- REGISTER PASSWORD -->
+<div class="auth-panel">
+<h2>Create Password</h2>
+
+<input id="regPassword" type="password">
+
+<button id="registerSubmit">
+Create Account
+</button>
+
+</div>
+
+</div>
+</div>
+
+</div>
 </div>

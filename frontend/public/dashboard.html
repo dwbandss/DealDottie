@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<title>DealDot AI Dashboard</title>
+
+<link rel="stylesheet" href="../css/dashboard.css">
+
+</head>
+
+<body>
+
+<div class="global-halo"></div>
+
+<!-- ================= AI BOOT ================= -->
+
+<div id="aiBoot">
+<div class="boot-center">
+<h2>Initializing Deal Intelligence</h2>
+<div id="bootSteps"></div>
+</div>
+</div>
+
+<!-- ================= HEADER ================= -->
+
+<header class="header">
+
+<div class="logo">DD</div>
+
+<nav>
+<a data-page="dashboard">Dashboard</a>
+<a data-page="deals">Deals</a>
+<a data-page="insights">Insights</a>
+<a data-page="history">History</a>
+</nav>
+
+<div class="header-right">
+<span id="username">Hi, Bandana</span>
+
+<div class="credit-pill">
+⚡ <span id="creditsLeft">10</span>
+</div>
+</div>
+
+</header>
+
+<!-- ================= APP ================= -->
+
+<main class="app-container">
+
+<!-- ================= DASHBOARD ================= -->
+
+<section id="dashboardPage" class="page active">
+
+<h1 class="title">Find the smartest deal</h1>
+
+<div class="search-area">
+
+<div class="ai-search">
+<button class="upload-btn">+</button>
+
+<input id="productInput"
+placeholder="Search product or upload image">
+
+<button id="searchBtn" class="primary">
+Search
+</button>
+</div>
+
+</div>
+
+<!-- FLOATING CARDS -->
+
+<div class="suggest-row floating-row">
+<div class="suggest-card">🔥 Phones</div>
+<div class="suggest-card">🎧 Headphones</div>
+<div class="suggest-card">💻 Laptops</div>
+<div class="suggest-card">⌚ Watches</div>
+</div>
+
+<!-- AI THINKING -->
+
+<div class="ai-thinking">
+<div class="ai-brain"><div class="pulse"></div></div>
+<div id="thinkingStream" class="thinking-stream"></div>
+<div id="variantSelector" class="variant-box"></div>
+<div id="dealResults" class="results-grid"></div>
+</div>
+</section>
+
+
+<!-- ================= DEALS ================= -->
+
+<section id="dealsPage" class="page">
+
+<h2>🔥 Trending Deals</h2>
+
+<div class="results-grid">
+<div class="deal-card">Lightning Deals</div>
+<div class="deal-card">Hidden Discounts</div>
+<div class="deal-card">Massive Price Drops</div>
+</div>
+
+</section>
+
+
+<!-- ================= INSIGHTS ================= -->
+
+<section id="insightsPage" class="page">
+
+<h2>AI Market Insights</h2>
+
+<div class="insight-grid">
+<div class="insight-card">📉 Prices dropping this week</div>
+<div class="insight-card">⚠ Fake reviews filtered</div>
+<div class="insight-card">✅ Trusted sellers detected</div>
+</div>
+
+</section>
+
+
+<!-- ================= HISTORY ================= -->
+
+<section id="historyPage" class="page">
+
+<h2>Recent Searches</h2>
+<ul id="historyList"></ul>
+
+</section>
+
+</main>
+
+<script src="../js/dashboard.js"></script>
+
+</body>
+</html>
