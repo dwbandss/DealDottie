@@ -1,0 +1,48 @@
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: all 0.9s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cursor {
+  position: fixed;
+  width: 16px;
+  height: 16px;
+  background: #7c6cff;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: width 0.15s ease, height 0.15s ease, opacity 0.15s ease;
+  z-index: 9999;
+}
+
+.cursor.active {
+  width: 56px;
+  height: 56px;
+  background: rgba(124,108,255,0.25);
+}
+/* .scroll-end{
+height:120vh;
+background:transparent;
+} */
+
+/* FOOTER CLEAN REVEAL */
+
+.footer{
+background:#111;
+color:white;
+padding:120px 8vw;
+position:relative;
+z-index:5;
+}
+
+.footer-inner{
+max-width:1200px;
+margin:auto;
+}
+

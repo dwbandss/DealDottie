@@ -1,0 +1,390 @@
+/* ===============================
+ HERO WRAPPER
+================================ */
+
+.hero-wrapper{
+isolation:isolate;
+position:relative;
+margin-bottom:-60px;
+}
+
+
+/* ===============================
+ PINNED HERO
+================================ */
+
+.hero{
+perspective:1400px;
+transform-style:preserve-3d;
+
+position:sticky;
+top:110px;
+
+height:calc(100vh - 110px);
+
+display:flex;
+align-items:center;
+justify-content:space-between;
+
+padding:80px 8vw 120px;
+overflow:visible;
+
+z-index:2;
+}
+
+
+/* ===============================
+ SCROLL DRIVER
+================================ */
+
+.scroll-spacer{
+height:calc(100vh * 1.9);
+}
+
+
+/* ===============================
+ HERO CONTENT
+================================ */
+
+.hero-content{
+max-width:620px;
+}
+
+.hero h1{
+font-size:94px;
+line-height:1.02;
+margin:20px 0;
+letter-spacing:-2px;
+font-weight:700;
+
+background:linear-gradient(180deg,#111,#444);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+.hero p{
+margin:24px 0;
+line-height:1.6;
+color:#6b7280;
+font-size:19px;
+}
+
+
+/* ===============================
+ BUTTONS
+================================ */
+
+.primary{
+background:linear-gradient(135deg,#111,#333);
+color:white;
+padding:14px 30px;
+border-radius:999px;
+border:none;
+cursor:pointer;
+transition:.35s;
+}
+
+.primary:hover{
+transform:translateY(-4px);
+box-shadow:0 18px 45px rgba(0,0,0,.25);
+}
+
+.secondary{
+border:1px solid rgba(0,0,0,.15);
+background:rgba(255,255,255,.6);
+backdrop-filter:blur(10px);
+padding:14px 30px;
+border-radius:999px;
+cursor:pointer;
+}
+
+
+/* ===============================
+ DEAL CARD (SCROLL ENGINE SAFE)
+================================ */
+
+.deal-card{
+
+--scrollY:0px;
+--rx:0deg;
+--ry:0deg;
+--mx:0px;
+--my:0px;
+
+transform:
+translateY(var(--scrollY))
+rotateX(var(--rx))
+rotateY(var(--ry));
+
+transition:transform .12s ease-out;
+
+margin-left:160px;
+width:440px;
+height:540px;
+
+display:flex;
+flex-direction:column;
+gap:10px;
+
+position:relative;
+overflow:hidden;
+
+background:rgba(255,255,255,.6);
+backdrop-filter:blur(24px);
+
+border-radius:34px;
+padding:34px;
+
+border:1px solid rgba(255,255,255,.7);
+
+box-shadow:
+0 40px 120px rgba(0,0,0,.12);
+}
+
+
+/* CARD HALO */
+
+.deal-card::after{
+content:"";
+position:absolute;
+inset:-120px;
+
+background:
+radial-gradient(circle,
+rgba(160,150,255,.25),
+transparent 70%);
+
+filter:blur(80px);
+z-index:-1;
+}
+
+
+/* IMAGE */
+
+.product-visual{
+height:240px;
+border-radius:22px;
+overflow:hidden;
+margin-bottom:20px;
+}
+
+.product-visual img{
+width:100%;
+height:100%;
+object-fit:cover;
+transition:.6s ease;
+}
+
+.deal-card:hover img{
+transform:scale(1.05);
+}
+
+
+/* ===============================
+ HOW SECTION
+================================ */
+
+.how-it-works{
+position:relative;
+padding:80px 8vw 20px;
+margin-top:-80px;
+z-index:2;
+}
+
+.how-container{
+max-width:1200px;
+margin:auto;
+text-align:center;
+}
+
+
+/* ===============================
+ TYPEWRITER TITLE
+================================ */
+
+#howTitle{
+font-size:56px;
+margin-bottom:60px;
+letter-spacing:-1px;
+font-weight:650;
+min-height:70px;
+}
+
+.typing{
+border-right:2px solid #111;
+animation:cursorBlink .9s infinite;
+}
+
+@keyframes cursorBlink{
+50%{border-color:transparent;}
+}
+
+
+/* ===============================
+ GRID
+================================ */
+@media (max-width:768px){
+
+.how-grid{
+grid-template-columns:1fr;
+}
+
+}
+.how-grid{
+display:flex;
+flex-direction:column;
+gap:40px;
+
+max-width:700px;
+margin:40px auto;
+}
+/* ===============================
+ CARD REVEAL (SAFE)
+================================ */
+
+/* ===============================
+ CARD INITIAL STATE
+================================ */
+
+.how-card{
+background:rgba(255,255,255,.6);
+backdrop-filter:blur(20px);
+margin-top: 10px;
+border-radius:24px;
+padding:40px;
+
+border:1px solid rgba(255,255,255,.7);
+
+box-shadow:
+0 20px 60px rgba(0,0,0,.08);
+
+/* hidden start */
+opacity:0;
+transform:translateY(90px);
+
+transition:
+transform .75s cubic-bezier(.16,1,.3,1),
+opacity .6s ease;
+}
+
+
+/* ===============================
+ CARD REVEAL
+================================ */
+
+.how-card.show{
+opacity:1;
+transform:translateY(0);
+}
+.how-card h3{
+margin-bottom:14px;
+font-size:20px;
+}
+
+.how-card p{
+line-height:1.7;
+color:#666;
+}
+
+/* hover */
+
+.how-card:hover{
+transform:translateY(-8px);
+box-shadow:
+0 40px 120px rgba(0,0,0,.15);
+}
+/* ===============================
+ HOW SECTION CTA
+================================ */
+
+.how-cta{
+display:flex;
+justify-content:center;
+margin-top:50px 0 20px;
+}
+
+
+/* BUTTON */
+
+.cta-primary{
+
+background:linear-gradient(135deg,#111,#2b2b2b);
+color:white;
+
+padding:16px 38px;
+border-radius:999px;
+
+font-size:16px;
+font-weight:500;
+letter-spacing:.3px;
+
+border:none;
+cursor:pointer;
+
+transition:
+transform .35s ease,
+box-shadow .35s ease,
+background .35s ease;
+}
+
+
+/* hover */
+
+.cta-primary:hover{
+transform:translateY(-4px);
+
+box-shadow:
+0 20px 50px rgba(0,0,0,.25);
+}
+
+
+/* press */
+
+.cta-primary:active{
+transform:translateY(-1px);
+}
+.cta-primary{
+position:relative;
+z-index:1;
+}
+
+.cta-primary::after{
+content:"";
+position:absolute;
+inset:-40px;
+
+background:radial-gradient(
+circle,
+rgba(45, 35, 141, 0.35),
+transparent 70%
+);
+
+filter:blur(40px);
+z-index:-1;
+opacity:.7;
+}
+
+/* ===============================
+ GLOBAL HALO
+================================ */
+
+.global-halo{
+position:fixed;
+top:0;
+left:0;
+width:100vw;
+height:100vh;
+pointer-events:none;
+z-index:-1;
+
+background:
+radial-gradient(circle at 70% 30%,
+rgba(160,150,255,.45),
+transparent 55%),
+
+radial-gradient(circle at 25% 75%,
+rgba(255,170,230,.4),
+transparent 60%);
+
+filter:blur(140px);
+}
