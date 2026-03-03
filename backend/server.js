@@ -53,6 +53,10 @@ const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/product.routes");
 app.use("/auth", authRoutes);
 app.use("/api/products", productRoutes);
+const imageRoutes = require("./routes/image.routes");
+
+/* AFTER express.json() */
+app.use("/api/products", imageRoutes);
 
 /* ======================
 DATABASE

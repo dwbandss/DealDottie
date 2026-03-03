@@ -57,16 +57,31 @@
 
 <div class="search-area">
 
-<div class="ai-search">
-<button class="upload-btn">+</button>
+  <div class="ai-search">
 
-<input id="productInput"
-placeholder="Search product or upload image">
+    <button id="uploadBtn" class="upload-btn">+</button>
 
-<button id="searchBtn" class="primary">
-Search
-</button>
-</div>
+    <input 
+      id="productInput"
+      type="text"
+      placeholder="Search product or upload image"
+      autocomplete="off"
+    />
+
+    <button id="searchBtn" class="primary">
+      Search
+    </button>
+
+  </div>
+
+  <!-- Hidden file input -->
+  <input 
+    type="file"
+    id="imageInput"
+    accept="image/*"
+    capture="environment"
+    style="display:none"
+  />
 
 </div>
 
@@ -90,44 +105,9 @@ Search
 </section>
 
 
-<!-- ================= DEALS ================= -->
-
-<section id="dealsPage" class="page">
-
-<h2>🔥 Trending Deals</h2>
-
-<div class="results-grid">
-<div class="deal-card">Lightning Deals</div>
-<div class="deal-card">Hidden Discounts</div>
-<div class="deal-card">Massive Price Drops</div>
-</div>
-
-</section>
 
 
-<!-- ================= INSIGHTS ================= -->
 
-<section id="insightsPage" class="page">
-
-<h2>AI Market Insights</h2>
-
-<div class="insight-grid">
-<div class="insight-card">📉 Prices dropping this week</div>
-<div class="insight-card">⚠ Fake reviews filtered</div>
-<div class="insight-card">✅ Trusted sellers detected</div>
-</div>
-
-</section>
-
-
-<!-- ================= HISTORY ================= -->
-
-<section id="historyPage" class="page">
-
-<h2>Recent Searches</h2>
-<ul id="historyList"></ul>
-
-</section>
 
 </main>
 

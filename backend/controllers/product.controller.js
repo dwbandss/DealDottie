@@ -1,114 +1,137 @@
 const axios = require("axios");
-const rankDeals = require("../ai/dealRanker");
+const rankDealsIndia = require("../ai/dealRanker");
 const normalizeQuery = require("../ai/queryBrain");
 const filterProducts = require("../ai/productMatcher");
 
+/* =========================================
+SMART SEARCH CONTROLLER
+========================================= */
+
 exports.searchProducts = async (req, res) => {
 
-try {
+  try {
 
-const rawQuery = req.query.query;
+    const rawQuery = req.query.query;
+    const selectedVariant = req.query.variant;
 
-if (!rawQuery)
-return res.status(400).json({
-error: "Query missing"
-});
+    if (!rawQuery)
+      return res.status(400).json({
+        error: "Query missing"
+      });
 
-/* ======================
-QUERY NORMALIZATION
-====================== */
+    const query = normalizeQuery(rawQuery);
+console.log("RAW QUERY:", rawQuery);
+console.log("SELECTED VARIANT:", selectedVariant);
+    /* =========================================
+    FETCH REAL MARKETPLACE DATA (SERP API)
+    ========================================= */
 
-const query = normalizeQuery(rawQuery);
+    const response = await axios.get(
+      "https://serpapi.com/search.json",
+      {
+        params: {
+          engine: "google_shopping",
+          q: rawQuery,
+          api_key: process.env.SERP_API_KEY,
+          gl: "in",       // India
+          hl: "en"
+        }
+      }
+    );
 
-/* ======================
-VARIANT DETECTION
-====================== */
+    const results =
+      response.data.shopping_results || [];
 
-const variants = ["pro","plus","pro max","max"];
+    if (!results.length)
+      return res.json({ products: [] });
 
-const foundVariants =
-variants.filter(v =>
-rawQuery.toLowerCase().includes(v)
-);
+    /* =========================================
+    FORMAT PRODUCTS
+    ========================================= */
 
-/* Ask variant ONLY if user didn't specify */
-if(foundVariants.length === 0 &&
-query.includes("iphone")){
+    let products = results.map(p => ({
 
-return res.json({
-askVariant:true,
-variants:["Pro","Plus","Pro Max"]
-});
-}
+      title: p.title,
+      price: parseInt(
+        p.price?.replace(/[^\d]/g, "")
+      ) || 0,
 
-/* ======================
-REAL MARKETPLACE API
-====================== */
+      rating: p.rating || 4,
+      reviews: p.reviews || 0,
+      seller: p.source || "Unknown",
+      image: p.thumbnail || "",
+      link: p.link || ""
 
-const response = await axios.get(
-"https://serpapi.com/search.json",
-{
-params:{
-engine:"google_shopping",
-q:rawQuery,
-api_key:process.env.SERP_API_KEY
-}
-});
+    }));
 
-const results =
-response.data.shopping_results || [];
+    /* =========================================
+    DYNAMIC VARIANT DETECTION
+    ========================================= */
 
-if(results.length === 0){
-return res.json({ products: [] });
-}
+    const variantKeywords = [
+      "pro", "max", "plus", "ultra",
+      "256gb", "512gb", "128gb",
+      "8gb", "12gb", "16gb"
+    ];
 
-/* ======================
-FORMAT PRODUCTS
-====================== */
+    const detectedVariants = new Set();
 
-const products = results.map(p => ({
+    products.forEach(p => {
+      variantKeywords.forEach(v => {
+        if (p.title.toLowerCase().includes(v)) {
+          detectedVariants.add(v.toUpperCase());
+        }
+      });
+    });
 
-title:p.title,
-price:parseInt(
-p.price?.replace(/[^\d]/g,"")
-) || 0,
+    /* Ask user for variant if device-like product */
+    if (!selectedVariant &&
+        detectedVariants.size > 0 &&
+        /phone|iphone|samsung|laptop|macbook|ipad|tablet/i.test(query)) {
 
-rating:p.rating || 4,
-reviews:p.reviews || 0,
-seller:p.source || "Unknown",
-image:p.thumbnail
-}));
+      return res.json({
+        askVariant: true,
+        variants: Array.from(detectedVariants)
+      });
+    }
 
-/* ======================
-AI MATCH FILTER
-====================== */
+    /* =========================================
+    STRICT VARIANT FILTERING
+    ========================================= */
 
-const filtered =
-filterProducts(products, rawQuery);
+    if (selectedVariant) {
+      products = products.filter(p =>
+        p.title.toLowerCase()
+          .includes(selectedVariant.toLowerCase())
+      );
+    }
 
-/* ======================
-AI RANK ENGINE
-====================== */
+    /* =========================================
+    MATCH FILTER (INTENT ACCURACY)
+    ========================================= */
 
-const ranked =
-rankDeals(filtered);
+    products =
+      filterProducts(products, rawQuery);
 
-/* ======================
-FINAL RESPONSE
-====================== */
+    /* =========================================
+    INDIA-BIASED RANKING
+    ========================================= */
 
-return res.json({
-products: ranked
-});
+    const ranked =
+      rankDealsIndia(products);
 
-}
-catch(err){
+    return res.json({
+      products: ranked
+    });
 
-console.error("SEARCH ENGINE ERROR:",err.message);
+  }
+  catch (err) {
 
-/* IMPORTANT — ALWAYS RESPOND */
-return res.status(500).json({
-error:"Marketplace engine failed"
-});
-}
+    console.error("SEARCH ENGINE ERROR:",
+      err.message);
+
+    return res.status(500).json({
+      error: "Marketplace engine failed"
+    });
+  }
 };
