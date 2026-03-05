@@ -1,53 +1,76 @@
-function cleanTitle(title) {
-  return title
-    .toLowerCase()
-    .replace(/[\(\)\|\-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+const {
+isSameProduct
+} = require("./productMatcher");
+
+/* =========================
+VARIANT DETECTION
+========================= */
+
+function extractVariant(title){
+
+const ram =
+title.match(/(\d+)\s?gb\s?ram/i);
+
+const storage =
+title.match(/(\d+)\s?(gb|tb)(?!\s?ram)/i);
+
+if(ram && storage)
+return `${ram[1]}GB/${storage[1]}${storage[2].toUpperCase()}`;
+
+if(storage)
+return storage[1]+storage[2].toUpperCase();
+
+return "Standard";
+
 }
-function extractBaseModel(title) {
 
-  const cleaned = cleanTitle(title);
+/* =========================
+GROUP PRODUCTS BY SIMILARITY
+========================= */
 
-  // Remove storage
-  const noStorage = cleaned.replace(/\d+\s?gb|\d+\s?tb/gi, "");
+function groupProducts(products){
 
-  // Remove colors
-  const noColor = noStorage.replace(
-    /(black|blue|green|white|silver|gray|grey|violet|red)/gi,
-    ""
-  );
+const groups = [];
 
-  return noColor.trim();
+products.forEach(product => {
+
+let placed = false;
+
+for(const group of groups){
+
+const baseProduct = group.products[0];
+
+if(
+isSameProduct(
+baseProduct.title,
+product.title
+)
+){
+
+group.products.push(product);
+placed = true;
+break;
+
 }
-function extractVariant(title) {
-  const match = title.match(/(\d+\s?gb|\d+\s?tb)/i);
-  return match ? match[0].toUpperCase() : "Standard";
+
 }
-function groupProducts(products) {
 
-  const groups = {};
+if(!placed){
 
-  products.forEach(p => {
+groups.push({
 
-    const base = extractBaseModel(p.title);
-    const variant = extractVariant(p.title);
+base: product.title,
+variant: extractVariant(product.title),
+products:[product]
 
-    const groupKey = base + "|" + variant;
+});
 
-    if (!groups[groupKey]) {
-      groups[groupKey] = {
-        base,
-        variant,
-        products: []
-      };
-    }
+}
 
-    groups[groupKey].products.push(p);
+});
 
-  });
+return groups;
 
-  return Object.values(groups);
 }
 
 module.exports = groupProducts;

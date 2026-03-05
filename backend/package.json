@@ -1,4 +1,18 @@
 {
+  "_moduleAliases": {
+  "@ai": "ai",
+  "@services": "services",
+  "@scrapers": "scrapers",
+  "@utils": "utils",
+  "@controllers": "controllers",
+  "@models": "models",
+  "@routes": "routes",
+  "@middleware": "middleware",
+  "@config": "config",
+  "@tests": "tests",
+  "@workers": "workers"
+},
+
   
   "dependencies": {
   

@@ -17,8 +17,20 @@ const agent = getRandomProxy();
 const options = {
 
 headers:{
+
 "User-Agent": getRandomUserAgent(),
-"Accept-Language":"en-IN,en;q=0.9"
+
+"Accept":
+"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+
+"Accept-Language":"en-IN,en;q=0.9",
+
+"Referer":"https://www.flipkart.com/",
+
+"Upgrade-Insecure-Requests":"1",
+
+"Connection":"keep-alive"
+
 },
 
 timeout:15000
@@ -34,7 +46,10 @@ await queue.add(()=>axios.get(url,options));
 
 const html = response.data;
 
-if(html.includes("captcha") || html.includes("blocked")){
+if(
+html.includes("captcha") ||
+html.includes("blocked")
+){
 throw new Error("Flipkart blocked request");
 }
 
@@ -58,6 +73,8 @@ priceText
 ? priceText.replace(/[^\d]/g,"")
 : null;
 
+if(!price) return;
+
 const ratingText =
 $(el).find("div._3LWZlK").first().text();
 
@@ -66,15 +83,15 @@ ratingText
 ? parseFloat(ratingText)
 : null;
 
-const reviewsText =
-$(el).find("span._2_R_DZ").text();
-
 let reviews = 0;
 
-if(reviewsText){
+const reviewText =
+$(el).find("span._2_R_DZ").text();
+
+if(reviewText){
 
 const match =
-reviewsText.match(/\d+/g);
+reviewText.match(/\d+/);
 
 if(match)
 reviews = parseInt(match[0]);
@@ -91,9 +108,8 @@ href
 
 const image =
 $(el).find("img").attr("src") ||
-$(el).find("img").attr("data-src");
-
-if(!price) return;
+$(el).find("img").attr("data-src") ||
+null;
 
 products.push({
 

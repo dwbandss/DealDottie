@@ -2,7 +2,7 @@ const scrapeAmazon =
 require("../scrapers/amazonScraper");
 
 const scrapeFlipkart =
-require("../services/mockFlipkart");
+require("../scrapers/flipkartScraper");
 
 const normalizeProduct =
 require("../services/normalizeService");
@@ -19,63 +19,56 @@ require("../ai/reviewTrust");
 const dealScore =
 require("../ai/dealScore");
 
+const generateMarketplaceDeals =
+require("../services/mockMarketplace");
 const {
-detectVariants,
-extractVariantInfo
-} = require("../services/variantService");
-
-
+  cleanTitle,
+  tokenize,
+  similarityScore,
+  isSameProduct
+} = require("../services/productMatcher");
 /* =========================
 ACCESSORY FILTER
 ========================= */
 
 function isAccessory(title){
 
-const lower =
-title.toLowerCase();
+const lower = title.toLowerCase();
 
-const keywords = [
-
+const words = [
 "cover",
 "case",
-"tempered",
 "protector",
 "charger",
 "cable",
+"tempered",
 "screen guard"
-
 ];
 
-return keywords.some(k =>
-lower.includes(k)
-);
+return words.some(w => lower.includes(w));
 
 }
 
-
 /* =========================
-PRODUCT RELEVANCE
+SMART RELEVANCE FILTER
 ========================= */
 
 function isRelevant(title,query){
 
-const words =
-query.toLowerCase().split(" ");
+const q = query.toLowerCase();
+const t = title.toLowerCase();
 
-const t =
-title.toLowerCase();
+const words = q.split(" ");
 
-let matches = 0;
+let score = 0;
 
 words.forEach(w=>{
-if(t.includes(w)) matches++;
+if(t.includes(w)) score++;
 });
 
-return matches >=
-Math.ceil(words.length*0.6);
+return score >= 1;
 
 }
-
 
 /* =========================
 SEARCH CONTROLLER
@@ -89,29 +82,17 @@ try{
 const query =
 req.query.query;
 
-const selectedVariant =
-req.query.variant;
-
-if(!query){
-
+if(!query)
 return res.status(400)
 .json({error:"Query missing"});
 
-}
-
-
 /* ===== CACHE ===== */
-
-if(!selectedVariant){
 
 const cached =
 cache.get(query);
 
 if(cached)
 return res.json(cached);
-
-}
-
 
 /* ===== SCRAPE ===== */
 
@@ -121,90 +102,57 @@ scrapeAmazon(query),
 scrapeFlipkart(query)
 ]);
 
+/* ===== MERGE ===== */
+
+let combined = [...amazonResults];
+
+amazonResults.forEach(p=>{
+
+const mockDeals =
+generateMarketplaceDeals(p);
+
+combined.push(...mockDeals);
+
+});
+
 /* ===== FILTER ===== */
 
 const filtered =
-[
-...amazonResults,
-...flipkartResults
-].filter(p=>
+combined.filter(p => {
 
-p.title &&
-!isAccessory(p.title) &&
-isRelevant(p.title,query)
+if(!p.title) return false;
 
-);
+if(isAccessory(p.title)) return false;
 
-if(filtered.length === 0){
+/* keyword relevance */
+if(!isRelevant(p.title,query)) return false;
 
+/* similarity identity check */
+if(!isSameProduct(query,p.title)) return false;
+
+return true;
+
+});
+if(filtered.length === 0)
 return res.json({products:[]});
-
-}
-
-
-/* ===== VARIANT DETECTION ===== */
-
-const variants =
-detectVariants(filtered);
-
-if(
-variants.length > 1 &&
-!selectedVariant
-){
-
-return res.json({
-
-askVariant:true,
-variants
-
-});
-
-}
-
-
-/* ===== VARIANT FILTER ===== */
-
-let variantFiltered =
-filtered;
-
-if(selectedVariant){
-
-variantFiltered =
-filtered.filter(p=>{
-
-const v =
-extractVariantInfo(p.title);
-
-return v === selectedVariant;
-
-});
-
-}
-
 
 /* ===== NORMALIZE ===== */
 
 const normalized =
-variantFiltered.map(normalizeProduct);
+filtered.map(normalizeProduct);
 
-
-/* ===== GROUP ===== */
+/* ===== GROUP PRODUCTS ===== */
 
 const grouped =
-groupProducts(normalized);
+groupProducts(normalized)
+.filter(g => g.products && g.products.length > 0);
+const results = [];
 
-
-const comparisonResults = [];
-
-
-/* ===== RANK ===== */
+/* ===== RANK DEALS ===== */
 
 grouped.forEach(group=>{
 
-const products =
-group.products;
-
-if(!products) return;
+const products = group.products;
 
 const cheapest =
 [...products]
@@ -224,19 +172,18 @@ reviewTrust(p);
 const score =
 dealScore(p);
 
-let tag =
-"Available";
+let verdict = "Available";
 
-if(p===cheapest)
-tag="💰 Cheapest";
+if(p === cheapest)
+verdict = "💰 Cheapest";
 
-else if(p===highestRated)
-tag="⭐ Highest Rated";
+else if(p === highestRated)
+verdict = "⭐ Highest Rated";
 
-comparisonResults.push({
+results.push({
 
 ...p,
-verdict:tag,
+verdict,
 dealScore:score,
 confidence:trust
 
@@ -246,18 +193,12 @@ confidence:trust
 
 });
 
-
 const result = {
-
-products:
-comparisonResults
-
+products: results.slice(0,15)
 };
-
 
 /* ===== CACHE ===== */
 
-if(!selectedVariant)
 cache.set(query,result);
 
 return res.json(result);

@@ -338,9 +338,11 @@ function showRealDeals(products){
 
   const results = document.getElementById("dealResults");
   if(!results) return;
-
+const seen = new Set();
   products.forEach((p, index) => {
-
+const key = p.title + (p.seller || p.source);
+if(seen.has(key)) return;
+seen.add(key);
     const card = document.createElement("div");
     card.className = "deal-card";
 
@@ -355,7 +357,7 @@ function showRealDeals(products){
 
       <h4>${p.title}</h4>
 
-      <p><strong>Website:</strong> ${p.seller}</p>
+      <p><strong>Website:</strong> ${p.seller || p.source || "Marketplace"}</p>
 
       <p>
         ${p.rating ? `⭐ ${p.rating}` : "No rating"}
@@ -365,11 +367,11 @@ function showRealDeals(products){
       <p class="price">₹ ${p.price}</p>
 
       <div class="deal-score">
-        AI Score: ${p.dealScore}
+        AI Score: ${p.dealScore ?? "N/A"}
       </div>
 
       <div>
-        Confidence: ${p.confidence}%
+        Confidence: ${p.confidence ?? 0}%
       </div>
 
       <div class="deal-label">
@@ -383,7 +385,7 @@ function showRealDeals(products){
                target="_blank"
                rel="noopener noreferrer"
                class="deal-link">
-               View on ${p.seller}
+               View on ${p.seller || p.source || "Marketplace"}
             </a>
           `
           : `<span class="no-link">Link unavailable</span>`

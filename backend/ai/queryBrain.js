@@ -1,33 +1,60 @@
-function normalizeQuery(query){
+function extractSpecs(title){
 
-if(!query) return "";
+title = title.toLowerCase();
 
-query = query.toLowerCase();
+const ramMatch =
+title.match(/(\d+)\s?gb\s?ram/i);
 
-/* remove numbers */
-query = query.replace(/\d+/g,"");
+const storageMatch =
+title.match(/(\d+)\s?gb(?!\s?ram)/i);
 
-/* remove marketing keywords */
-query = query
-.replace("pro","")
-.replace("max","")
-.replace("ultra","")
-.replace("plus","");
+let ram = ramMatch ? ramMatch[1]+"GB" : null;
+let storage = storageMatch ? storageMatch[1]+"GB" : null;
 
-query = query.trim();
+let brand = null;
+let model = null;
 
-/* intent detection */
-
-if(query.includes("iphone"))
-return "iphone";
-
-if(query.includes("samsung"))
-return "samsung";
-
-if(query.includes("laptop"))
-return "laptop";
-
-return query;
+if(title.includes("samsung")){
+brand="Samsung";
 }
 
-module.exports = normalizeQuery;
+if(title.includes("iphone")){
+brand="Apple";
+}
+
+if(title.includes("nothing")){
+brand="Nothing";
+}
+
+const modelMatch =
+title.match(/(s\d{2}|iphone\s?\d+|phone\s?\d[a-z]?)/i);
+
+model = modelMatch ? modelMatch[0] : null;
+
+return {
+brand,
+model,
+ram,
+storage
+};
+
+}
+
+function isSameProduct(a,b){
+
+const A = extractSpecs(a.title);
+const B = extractSpecs(b.title);
+
+return (
+A.brand === B.brand &&
+A.model === B.model &&
+A.ram === B.ram &&
+A.storage === B.storage
+);
+
+}
+
+module.exports = {
+extractSpecs,
+isSameProduct
+};
