@@ -1,26 +1,19 @@
-function detectVariants(products){
+const fakeReviewScore =
+require("./fakeReviewDetector");
 
-const variants = new Set();
+function reviewTrust(product){
 
-products.forEach(p=>{
+const fake =
+fakeReviewScore(product);
 
-const title = p.title.toLowerCase();
+const reviews =
+product.reviews || 1;
 
-if(title.includes("pro max"))
-variants.add("Pro Max");
+const trust =
+100 - fake + Math.log10(reviews+1)*10;
 
-else if(title.includes("pro"))
-variants.add("Pro");
+return Math.min(100,Math.round(trust));
 
-else if(title.includes("plus"))
-variants.add("Plus");
-
-else if(title.includes("iphone 15"))
-variants.add("Standard");
-
-});
-
-return Array.from(variants);
 }
 
-module.exports = detectVariants;
+module.exports = reviewTrust;

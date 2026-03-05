@@ -17,6 +17,7 @@ document
 .getElementById("productInput")
 .addEventListener("keydown", (e)=>{
 if(e.key === "Enter"){
+    e.preventDefault();
 startAISearch();
 }
 });
@@ -98,6 +99,14 @@ if(target) target.classList.add("active");
 });
 }
 
+/* =====================================================
+CLEAR DEALS
+===================================================== */
+
+function clearDeals(){
+  const results = document.getElementById("dealResults");
+  if(results) results.innerHTML = "";
+}
 
 /* =====================================================
 AI THINKING ENGINE
@@ -148,8 +157,12 @@ return;
 PRODUCT RESULTS
 ========================= */
 
-const products = data.products || data;
-
+const products = Array.isArray(data.products)
+  ? data.products
+  : [];
+if(data.filters){
+  renderFilters(data.filters);
+}
 if(!products || products.length === 0){
 await addThought("⚠ No accurate deals found.");
 return;
@@ -202,7 +215,62 @@ function showVariantSelector(query, variants){
     box.appendChild(btn);
   });
 }
+/* =====================================================
+DYNAMIC FILTER RENDER
+===================================================== */
 
+function renderFilters(filters){
+
+  const box = document.getElementById("variantSelector");
+  if(!box) return;
+
+  box.innerHTML = "";
+
+  Object.keys(filters).forEach(key => {
+
+    if(!filters[key] || filters[key].length === 0) return;
+
+    const group = document.createElement("div");
+    group.className = "filter-group";
+
+    const title = document.createElement("div");
+    title.className = "variant-title";
+    title.innerText = key.toUpperCase();
+    group.appendChild(title);
+
+    filters[key].forEach(value => {
+
+      const btn = document.createElement("button");
+      btn.className = "variant-option";
+      btn.innerText = value;
+
+      btn.onclick = () => applyFilter(key, value);
+
+      group.appendChild(btn);
+    });
+
+    box.appendChild(group);
+  });
+}
+
+/* =====================================================
+APPLY FILTER
+===================================================== */
+
+function applyFilter(key, value){
+
+  const cards = document.querySelectorAll(".deal-card");
+
+  cards.forEach(card => {
+
+    if(card.innerText.toLowerCase().includes(value.toLowerCase())){
+      card.style.display = "block";
+    } else {
+      card.style.display = "none";
+    }
+
+  });
+}
 
 async function startAISearchWithVariant(baseQuery, variant){
 
@@ -266,46 +334,65 @@ THINKING STREAM
 /* =====================================================
 REAL DEAL DISPLAY
 ===================================================== */
-
 function showRealDeals(products){
 
-const results=document.getElementById("dealResults");
-if(!results) return;
+  const results = document.getElementById("dealResults");
+  if(!results) return;
 
-products.forEach(p=>{
+  products.forEach((p, index) => {
 
-const card=document.createElement("div");
-card.className="deal-card";
+    const card = document.createElement("div");
+    card.className = "deal-card";
 
-/* backend uses verdict not label */
-const label = p.verdict || "Good Deal";
+    if(index === 0){
+      card.classList.add("top-deal");
+    }
 
-card.innerHTML=`
-<img src="${p.image}" class="deal-img"/>
+    const label = p.verdict || "Good Deal";
 
-<h4>${p.title}</h4>
+    card.innerHTML = `
+     <img src="${p.image || 'https://via.placeholder.com/200'}" class="deal-img"/>
 
-<p>⭐ ${p.rating || 4}</p>
+      <h4>${p.title}</h4>
 
-<p class="price">₹ ${p.price}</p>
+      <p><strong>Website:</strong> ${p.seller}</p>
 
-<div class="deal-score">
-AI Score: ${p.dealScore || 70}
-</div>
+      <p>
+        ${p.rating ? `⭐ ${p.rating}` : "No rating"}
+        (${p.reviews || 0} reviews)
+      </p>
 
-<div class="deal-label">
-${label}
-</div>
-`;
+      <p class="price">₹ ${p.price}</p>
 
-results.appendChild(card);
+      <div class="deal-score">
+        AI Score: ${p.dealScore}
+      </div>
 
-});
-}
+      <div>
+        Confidence: ${p.confidence}%
+      </div>
 
-function clearDeals(){
-const results=document.getElementById("dealResults");
-if(results) results.innerHTML="";
+      <div class="deal-label">
+        ${label}
+      </div>
+
+      ${
+        p.link
+          ? `
+            <a href="${p.link}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="deal-link">
+               View on ${p.seller}
+            </a>
+          `
+          : `<span class="no-link">Link unavailable</span>`
+      }
+    `;
+
+    results.appendChild(card);
+
+  });
 }
 /* =====================================================
 THINKING STREAM

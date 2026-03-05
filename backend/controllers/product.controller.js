@@ -1,137 +1,281 @@
-const axios = require("axios");
-const rankDealsIndia = require("../ai/dealRanker");
-const normalizeQuery = require("../ai/queryBrain");
-const filterProducts = require("../ai/productMatcher");
+const scrapeAmazon =
+require("../scrapers/amazonScraper");
 
-/* =========================================
-SMART SEARCH CONTROLLER
-========================================= */
+const scrapeFlipkart =
+require("../services/mockFlipkart");
 
-exports.searchProducts = async (req, res) => {
+const normalizeProduct =
+require("../services/normalizeService");
 
-  try {
+const groupProducts =
+require("../services/groupingService");
 
-    const rawQuery = req.query.query;
-    const selectedVariant = req.query.variant;
+const cache =
+require("../utils/cache");
 
-    if (!rawQuery)
-      return res.status(400).json({
-        error: "Query missing"
-      });
+const reviewTrust =
+require("../ai/reviewTrust");
 
-    const query = normalizeQuery(rawQuery);
-console.log("RAW QUERY:", rawQuery);
-console.log("SELECTED VARIANT:", selectedVariant);
-    /* =========================================
-    FETCH REAL MARKETPLACE DATA (SERP API)
-    ========================================= */
+const dealScore =
+require("../ai/dealScore");
 
-    const response = await axios.get(
-      "https://serpapi.com/search.json",
-      {
-        params: {
-          engine: "google_shopping",
-          q: rawQuery,
-          api_key: process.env.SERP_API_KEY,
-          gl: "in",       // India
-          hl: "en"
-        }
-      }
-    );
+const {
+detectVariants,
+extractVariantInfo
+} = require("../services/variantService");
 
-    const results =
-      response.data.shopping_results || [];
 
-    if (!results.length)
-      return res.json({ products: [] });
+/* =========================
+ACCESSORY FILTER
+========================= */
 
-    /* =========================================
-    FORMAT PRODUCTS
-    ========================================= */
+function isAccessory(title){
 
-    let products = results.map(p => ({
+const lower =
+title.toLowerCase();
 
-      title: p.title,
-      price: parseInt(
-        p.price?.replace(/[^\d]/g, "")
-      ) || 0,
+const keywords = [
 
-      rating: p.rating || 4,
-      reviews: p.reviews || 0,
-      seller: p.source || "Unknown",
-      image: p.thumbnail || "",
-      link: p.link || ""
+"cover",
+"case",
+"tempered",
+"protector",
+"charger",
+"cable",
+"screen guard"
 
-    }));
+];
 
-    /* =========================================
-    DYNAMIC VARIANT DETECTION
-    ========================================= */
+return keywords.some(k =>
+lower.includes(k)
+);
 
-    const variantKeywords = [
-      "pro", "max", "plus", "ultra",
-      "256gb", "512gb", "128gb",
-      "8gb", "12gb", "16gb"
-    ];
+}
 
-    const detectedVariants = new Set();
 
-    products.forEach(p => {
-      variantKeywords.forEach(v => {
-        if (p.title.toLowerCase().includes(v)) {
-          detectedVariants.add(v.toUpperCase());
-        }
-      });
-    });
+/* =========================
+PRODUCT RELEVANCE
+========================= */
 
-    /* Ask user for variant if device-like product */
-    if (!selectedVariant &&
-        detectedVariants.size > 0 &&
-        /phone|iphone|samsung|laptop|macbook|ipad|tablet/i.test(query)) {
+function isRelevant(title,query){
 
-      return res.json({
-        askVariant: true,
-        variants: Array.from(detectedVariants)
-      });
-    }
+const words =
+query.toLowerCase().split(" ");
 
-    /* =========================================
-    STRICT VARIANT FILTERING
-    ========================================= */
+const t =
+title.toLowerCase();
 
-    if (selectedVariant) {
-      products = products.filter(p =>
-        p.title.toLowerCase()
-          .includes(selectedVariant.toLowerCase())
-      );
-    }
+let matches = 0;
 
-    /* =========================================
-    MATCH FILTER (INTENT ACCURACY)
-    ========================================= */
+words.forEach(w=>{
+if(t.includes(w)) matches++;
+});
 
-    products =
-      filterProducts(products, rawQuery);
+return matches >=
+Math.ceil(words.length*0.6);
 
-    /* =========================================
-    INDIA-BIASED RANKING
-    ========================================= */
+}
 
-    const ranked =
-      rankDealsIndia(products);
 
-    return res.json({
-      products: ranked
-    });
+/* =========================
+SEARCH CONTROLLER
+========================= */
 
-  }
-  catch (err) {
+exports.searchProducts =
+async (req,res)=>{
 
-    console.error("SEARCH ENGINE ERROR:",
-      err.message);
+try{
 
-    return res.status(500).json({
-      error: "Marketplace engine failed"
-    });
-  }
+const query =
+req.query.query;
+
+const selectedVariant =
+req.query.variant;
+
+if(!query){
+
+return res.status(400)
+.json({error:"Query missing"});
+
+}
+
+
+/* ===== CACHE ===== */
+
+if(!selectedVariant){
+
+const cached =
+cache.get(query);
+
+if(cached)
+return res.json(cached);
+
+}
+
+
+/* ===== SCRAPE ===== */
+
+const [amazonResults,flipkartResults] =
+await Promise.all([
+scrapeAmazon(query),
+scrapeFlipkart(query)
+]);
+
+/* ===== FILTER ===== */
+
+const filtered =
+[
+...amazonResults,
+...flipkartResults
+].filter(p=>
+
+p.title &&
+!isAccessory(p.title) &&
+isRelevant(p.title,query)
+
+);
+
+if(filtered.length === 0){
+
+return res.json({products:[]});
+
+}
+
+
+/* ===== VARIANT DETECTION ===== */
+
+const variants =
+detectVariants(filtered);
+
+if(
+variants.length > 1 &&
+!selectedVariant
+){
+
+return res.json({
+
+askVariant:true,
+variants
+
+});
+
+}
+
+
+/* ===== VARIANT FILTER ===== */
+
+let variantFiltered =
+filtered;
+
+if(selectedVariant){
+
+variantFiltered =
+filtered.filter(p=>{
+
+const v =
+extractVariantInfo(p.title);
+
+return v === selectedVariant;
+
+});
+
+}
+
+
+/* ===== NORMALIZE ===== */
+
+const normalized =
+variantFiltered.map(normalizeProduct);
+
+
+/* ===== GROUP ===== */
+
+const grouped =
+groupProducts(normalized);
+
+
+const comparisonResults = [];
+
+
+/* ===== RANK ===== */
+
+grouped.forEach(group=>{
+
+const products =
+group.products;
+
+if(!products) return;
+
+const cheapest =
+[...products]
+.sort((a,b)=>a.price-b.price)[0];
+
+const highestRated =
+[...products]
+.sort((a,b)=>
+(b.rating||0)-(a.rating||0)
+)[0];
+
+products.forEach(p=>{
+
+const trust =
+reviewTrust(p);
+
+const score =
+dealScore(p);
+
+let tag =
+"Available";
+
+if(p===cheapest)
+tag="💰 Cheapest";
+
+else if(p===highestRated)
+tag="⭐ Highest Rated";
+
+comparisonResults.push({
+
+...p,
+verdict:tag,
+dealScore:score,
+confidence:trust
+
+});
+
+});
+
+});
+
+
+const result = {
+
+products:
+comparisonResults
+
+};
+
+
+/* ===== CACHE ===== */
+
+if(!selectedVariant)
+cache.set(query,result);
+
+return res.json(result);
+
+}
+
+catch(err){
+
+console.error(
+"Controller error:",
+err.message
+);
+
+return res.status(500)
+.json({
+error:"Marketplace engine failed"
+});
+
+}
+
 };

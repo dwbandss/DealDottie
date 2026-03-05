@@ -1,36 +1,82 @@
-function rankDealsIndia(products) {
+const dealScore = require("../ai/dealScore");
+const reviewTrust = require("../ai/reviewTrust");
 
-  if (!products.length) return [];
+function rankDeals(products){
 
-  const avgPrice =
-    products.reduce((a, p) => a + p.price, 0)
-    / products.length;
+if(!products || products.length === 0)
+return [];
 
-  return products.map(p => {
+/* -------------------------
+DATA CONTEXT
+------------------------- */
 
-    let score = 0;
+const prices =
+products.map(p => p.price || 0);
 
-    score += Math.min(p.reviews / 100, 50);
-    score += (p.rating || 4) * 8;
+const avgPrice =
+prices.reduce((a,b)=>a+b,0) / prices.length;
 
-    if (avgPrice > 0) {
-      score += ((avgPrice - p.price) / avgPrice) * 30;
-    }
+const minPrice =
+Math.min(...prices);
 
-    if (/amazon|flipkart/i.test(p.seller))
-      score += 10;
+/* -------------------------
+RANKING
+------------------------- */
 
-    return {
-      ...p,
-      dealScore: Math.round(score),
-      verdict:
-        score > 90 ? "🔥 Best Deal" :
-        score > 70 ? "✅ Great Deal" :
-        score > 50 ? "👍 Good Deal" :
-        "⚠ Consider Carefully"
-    };
+const scored =
+products
+.filter(p => p.price > 0)
+.map(p => {
 
-  }).sort((a, b) => b.dealScore - a.dealScore);
+const trust =
+reviewTrust(p);
+
+const score =
+dealScore({
+...p,
+avgPrice,
+minPrice
+});
+
+let verdict = "Good Option";
+
+if(score > 85)
+verdict = "🏆 Best Deal";
+
+else if(score > 70)
+verdict = "🔥 Great Value";
+
+else if(score > 60)
+verdict = "👍 Worth Buying";
+
+/* Confidence model */
+
+const confidence =
+Math.min(
+100,
+Math.round(
+(p.rating || 4) *
+Math.log((p.reviews || 1)+1)
+)
+);
+
+return {
+...p,
+dealScore: score,
+confidence,
+verdict
+};
+
+});
+
+/* -------------------------
+SORT
+------------------------- */
+
+return scored
+.sort((a,b)=>b.dealScore-a.dealScore)
+.slice(0,10);
+
 }
 
-module.exports = rankDealsIndia;
+module.exports = rankDeals;
